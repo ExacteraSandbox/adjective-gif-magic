@@ -22,59 +22,47 @@ serve(async (req) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      console.error('LOVABLE_API_KEY not found');
+    const GIPHY_API_KEY = Deno.env.get('GIPHY_API_KEY');
+    if (!GIPHY_API_KEY) {
+      console.error('GIPHY_API_KEY not found');
       return new Response(
-        JSON.stringify({ error: 'API key not configured' }), 
+        JSON.stringify({ error: 'Giphy API key not configured' }), 
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Calling Lovable AI to find dog GIF...');
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { 
-            role: 'system', 
-            content: 'You are a helpful assistant that searches for dog GIFs. When given an adjective, you must respond with a valid Giphy URL for a dog GIF that matches that adjective. Only respond with the URL, nothing else. Use the format: https://media.giphy.com/media/[ID]/giphy.gif' 
-          },
-          { 
-            role: 'user', 
-            content: `Find a Giphy URL for a ${adjective} dog GIF. Respond only with the URL.` 
-          }
-        ],
-      }),
-    });
+    // Search Giphy for dog GIFs with the adjective
+    const searchQuery = `${adjective} dog`;
+    console.log('Searching Giphy for:', searchQuery);
+    
+    const giphyUrl = `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(searchQuery)}&limit=10&rating=g`;
+    
+    const response = await fetch(giphyUrl);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Lovable AI error:', response.status, errorText);
+      console.error('Giphy API error:', response.status, errorText);
       return new Response(
-        JSON.stringify({ error: 'Failed to get GIF from AI' }), 
+        JSON.stringify({ error: 'Failed to search Giphy' }), 
         { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     const data = await response.json();
-    console.log('Lovable AI response:', data);
+    console.log('Giphy API response:', data);
     
-    const gifUrl = data.choices?.[0]?.message?.content?.trim();
-    
-    if (!gifUrl) {
-      console.error('No GIF URL in response');
+    if (!data.data || data.data.length === 0) {
+      console.error('No GIFs found for query:', searchQuery);
       return new Response(
-        JSON.stringify({ error: 'No GIF found' }), 
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'No dog GIFs found for that adjective' }), 
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    // Get a random GIF from the first 10 results
+    const randomIndex = Math.floor(Math.random() * data.data.length);
+    const gifUrl = data.data[randomIndex].images.original.url;
+    
     console.log('Found GIF URL:', gifUrl);
     return new Response(
       JSON.stringify({ gifUrl }), 
