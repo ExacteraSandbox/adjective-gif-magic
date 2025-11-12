@@ -22,16 +22,16 @@ const Index = () => {
     setGifUrl("");
 
     try {
-      const apiUrl = `https://corgi-gif-service.onrender.com/api/corgi?activity=${encodeURIComponent(adjective.trim())}`;
-      const response = await fetch(apiUrl);
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data, error } = await supabase.functions.invoke('get-corgi-gif', {
+        body: { adjective: adjective.trim() }
+      });
 
-      if (!response.ok) {
-        console.error('API error:', response.status);
+      if (error) {
+        console.error('API error:', error);
         toast.error("Failed to fetch corgi GIF");
         return;
       }
-
-      const data = await response.json();
 
       if (data?.gif_url) {
         setGifUrl(data.gif_url);

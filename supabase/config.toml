@@ -1,0 +1,4 @@
+project_id = "cswscvixhzjawvcdjmgs"
+
+[functions.get-corgi-gif]
+verify_jwt = false
