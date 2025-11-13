@@ -22,7 +22,7 @@ const Index = () => {
     setGifUrl("");
 
     try {
-      const apiUrl = `https://corgi-gif-service.onrender.com/api/corgi?activity=${encodeURIComponent(adjective.trim())}`;
+      const apiUrl = `https://corgi-gif-service-1.onrender.com/api/corgi?activity=${encodeURIComponent(adjective.trim())}`;
       const response = await fetch(apiUrl);
 
       if (!response.ok) {
